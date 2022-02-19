@@ -5,12 +5,11 @@ import quandl
 import matplotlib.pyplot as plt
 import math as m
 
-import COVID19Py
-
 import requests
 import datetime
 
-TOKEN = "2035055117:AAEeeH2R8p3bXdPjAtdtRUMZt2iDxRIBWEk"
+with open("token", "r") as f:
+    TOKEN = f.read
 
 # подключаем базу данных
 conn = sqlite3.connect('planner_hse.db')

@@ -39,24 +39,10 @@ def send_keyboard(message, text="Привет, чем я могу тебе по�
     itembtn1 = types.KeyboardButton('Погода в Москве')
     itembtn2 = types.KeyboardButton('Фонд Рынок')
 
-    # Евгений
-    itembtn3 = types.KeyboardButton('разы в дБ')  # создадим кнопку
-    itembtn4 = types.KeyboardButton('дБ в разы')
-    itembtn5 = types.KeyboardButton('дБ в КСВН')
-    itembtn6 = types.KeyboardButton("Построить график S параметров")
-
-    # Даниял
-    itembtn7 = types.KeyboardButton('Россия')  # создадим кнопку
-    itembtn8 = types.KeyboardButton('США')
-    itembtn9 = types.KeyboardButton('Норвегия')
-    itembtn10 = types.KeyboardButton("Украина")
-
     itembtn11 = types.KeyboardButton('Пока все!')
 
     keyboard.add(itembtn1, itembtn2) # Мои
-    keyboard.add(itembtn3, itembtn4, itembtn5, itembtn6) # Евгений
-    keyboard.add(itembtn7, itembtn8) # Даниял
-    keyboard.add(itembtn9, itembtn10)
+
     keyboard.add(itembtn11)
     # но если кнопок слишком много, они пойдут на след ряд автоматически
 
@@ -86,28 +72,6 @@ def callback_worker(call):
                                text=call.text, reply_markup=keyboard)
         # отправим этот вариант в функцию, которая его обработает
         bot.register_next_step_handler(msg_4, callback_worker_4)
-
-    elif (call.text == "разы в дБ") or (call.text == "дБ в разы") or (call.text == "дБ в КСВН") or (call.text == "Построить график S параметров"):
-        msg_5 = bot.send_message(call.chat.id, 'Нажмите кнопку еще раз!')
-        bot.register_next_step_handler(msg_5, callback_worker_evg)
-
-    elif call.text == "Россия":
-        location = covid19.getLocationByCountryCode("RU")
-        final_message = f"Заболевших: {location[0]['latest']['confirmed']:,}"
-        bot.send_message(call.chat.id, final_message)
-    elif call.text == "США":
-        location = covid19.getLocationByCountryCode("US")
-        final_message = f"Заболевших: {location[0]['latest']['confirmed']:,}"
-        bot.send_message(call.chat.id, final_message)
-    elif call.text == "Украина":
-        location = covid19.getLocationByCountryCode("UA")
-        final_message = f"Заболевших: {location[0]['latest']['confirmed']:,}"
-        bot.send_message(call.chat.id, final_message)
-    elif call.text == "Норвегия":
-        location = covid19.getLocationByCountryCode("NO")
-        final_message = f"Заболевших: {location[0]['latest']['confirmed']:,}"
-        bot.send_message(call.chat.id, final_message)
-
 
     elif call.text == "Пока все!":
         bot.send_message(call.chat.id, 'Хорошего дня! Когда захотите продолжнить нажмите на команду /start')
@@ -180,92 +144,7 @@ def grafik(call):
 
 """
 Окончание блока функций моих (Николай)
-Начало блока функций от Евгения
-"""
 
-# вызываемые функции
-def times_to_dB(dB): # функция перевода разов в дБ
-    if dB.text.isdigit():
-        num_dB = float(dB.text)
-        result = 10 * m.log(num_dB, 10)
-        bot.send_message(dB.chat.id, str("%.4f" % result) + ' дБ')
-    else:
-        bot.send_message(dB.chat.id, "Вы ввели не число или число меньше нуля")
-    send_keyboard(dB, "Чем еще могу помочь?")
-
-def dB_to_times(times): # функция перевода дБ в разы
-    specialChars = ",.-"
-    txt = times.text
-    for specialChar in specialChars:
-        txt = txt.replace(specialChar, '')
-
-    if txt.isdigit():
-        num_times = float(times.text)
-        result = 10 ** (num_times / 10)
-        bot.send_message(times.chat.id, str("%.4f" % result))
-    else:
-        bot.send_message(times.chat.id, "Вы ввели не число")
-    send_keyboard(times, "Чем могу быть полезен?")
-
-def dB_to_VSWR(VSWR): # функция вычисляющая КСВН
-    specialChars = ",.-"
-    txt = VSWR.text
-    for specialChar in specialChars:
-        txt = txt.replace(specialChar, '')
-
-    if txt.isdigit() and float(VSWR.text) < 0.0:
-        num = 10 ** (float(VSWR.text) / 20)
-        result = (1 + abs(num)) / (1 - abs(num))
-        bot.send_message(VSWR.chat.id, str("%.4f" % result))
-    else:
-        bot.send_message(VSWR.chat.id, "Вы ввели не число или число больше нуля")
-    send_keyboard(VSWR, "Чем могу быть полезен?")
-
-def plot_sparams(data_list, y_min, y_max, S_param_name): # рисуем график S параметра
-    x = []
-    y = []
-    for i in range(len(data_list)):
-        x.append(data_list[i][0])
-        y.append(data_list[i][1])
-
-    plt.plot(x, y);
-    plt.ylim([y_min, y_max])
-    plt.grid('true')
-    plt.xlabel('Частота, ГГц')
-    plt.ylabel(S_param_name + ' дБ')
-    plt.title('Грифк зависимости ' + S_param_name + ' от частоты')
-    fig_name = S_param_name
-    plt.savefig(fig_name)
-    return fig_name
-
-def prints(doc_data):
-    if doc_data.content_type != 'document':
-        bot.send_message(doc_data.chat.id, "Ошибка чтения файла")
-        send_keyboard(doc_data, "Чем могу быть полезен?")
-
-    file_object = bot.get_file(doc_data.document.file_id)
-    #print(doc_data)
-    path = file_object.file_path
-    path_to_file = "https://api.telegram.org/file/bot" + TOKEN + "/" + path
-    response = requests.get(path_to_file)
-    data_file = response.text
-    data_file = data_file.replace('\r', '')
-    data_str = data_file.split('\n')
-    data_list = []
-    for x in data_str:
-        data_list.append(list(map(float, x.split(' '))))
-
-    try:
-        S_param_name = '' + doc_data.caption
-
-    except:
-        S_param_name = 'clear'
-    plot_name = plot_sparams(data_list, -30, 0, S_param_name)
-    bot.send_photo(doc_data.chat.id, photo=open(plot_name + '.png', 'rb'))
-    send_keyboard(doc_data, "Чем еще могу помочь?")
-
-"""
-Окончание блока функций от Евгения
 Мои Callback (Николай)
 """
 
@@ -278,37 +157,5 @@ def callback_worker_4(call):
 
     grafik(call)
     send_keyboard(call, "Чем еще могу помочь?")
-
-"""
-Callback Евгения
-"""
-
-def callback_worker_evg(call):
-    if call.text == "разы в дБ":
-        msg_times = bot.send_message(call.chat.id, 'Прошу ввести величину в разах (больше нуля)')
-        bot.register_next_step_handler(msg_times, times_to_dB)
-
-    elif call.text == "дБ в разы":
-        msg_dB = bot.send_message(call.chat.id, 'Прошу ввести величину в дБ')
-        bot.register_next_step_handler(msg_dB, dB_to_times)
-
-    elif call.text == "дБ в КСВН":
-        msg_VSWR = bot.send_message(call.chat.id, 'Прошу ввести величину в дБ')
-        bot.register_next_step_handler(msg_VSWR, dB_to_VSWR)
-
-    elif call.text == "Построить график S параметров":
-        doc_data = bot.send_message(call.chat.id, 'Прошу данные для графика')
-        bot.register_next_step_handler(doc_data, prints)
-
-    elif call.text == "Другое":
-        bot.send_message(call.chat.id, 'Неверный запрос')
-        send_keyboard(call, "Можете повторить команду?")
-
-    #send_keyboard(call, "Чем еще могу помочь?")
-
-""" 
-Окончание Callback Евгения
-"""
-
 
 bot.polling(none_stop=True)
